@@ -2,5 +2,7 @@ venv/
 .DS_Store
 .pyc
 .idea
+data
+data.db
 data/final_data.json
 data/final_data_slice.json
