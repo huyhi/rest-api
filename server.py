@@ -1,17 +1,21 @@
+import json
+import os
+import sys
+from threading import Thread
+from typing import Dict, List
+
+import faiss
 import numpy as np
 import pandas as pd
-from flask import Flask, request, Response, jsonify
-from flask_cors import CORS, cross_origin
-import os
 import pymongo
-import faiss
-from threading import Thread
-from sklearn.preprocessing import MinMaxScaler
-from typing import Dict, List
 import requests
-from bson.json_util import dumps
+from flask import Flask, request, Response
+from flask_cors import CORS, cross_origin
+from langchain_openai import OpenAIEmbeddings
+from sklearn.preprocessing import MinMaxScaler
+
 import config
-import sys
+from chain import chat_streaming_output, summarize_output, literature_review_output
 
 client = None
 docs = None
@@ -20,11 +24,21 @@ app = Flask(__name__, static_folder='./build', static_url_path='/')
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 df = None
-restricted_column_list = ['glove_embedding', 'specter_embedding']
+
+ada_embedding_func = OpenAIEmbeddings(model='text-embedding-ada-002')
+
+restricted_column_list = ['glove_embedding', 'specter_embedding', 'ada_embedding']
 query_index = {
     "glove_embedding": None,
-    "specter_embedding": None
+    "specter_embedding": None,
+    "ada_embedding": None
 }
+
+
+class EMBED:
+    SPECTER = 'specter'
+    GLOVE = 'glove'
+    ADA = 'ada'
 
 
 def create_query_index():
@@ -51,6 +65,17 @@ def create_query_index():
         index.add(xb)
         print("created query index for specter")
         query_index['specter_embedding'] = index
+
+    # Ada
+    if "ada_embedding" in df.columns:
+        null_free_df = df[df['ada_embedding'].str.len() > 0].copy()
+        null_free_df.dropna(subset=['ada_embedding'], inplace=True)
+        xb = (np.array(null_free_df["ada_embedding"].tolist())).astype('float32')
+        d = xb.shape[1]
+        index = faiss.IndexFlatL2(d)
+        index.add(xb)
+        print("created query index for ada")
+        query_index['ada_embedding'] = index
 
 
 def load_data():
@@ -109,8 +134,13 @@ def load_data():
         df_data['glove_embedding'] = df_data['glove_embedding'].apply(lambda x: np.array(x))
     if "specter_embedding" in df_data.columns:
         df_data['specter_embedding'] = df_data['specter_embedding'].apply(lambda x: np.array(x))
+    if "ada_embedding" in df_data.columns:
+        df_data['ada_embedding'] = df_data['ada_embedding'].apply(lambda x: np.array(x))
+
     if "glove_umap" in df_data.columns:
         df_data['glove_umap'] = df_data['glove_umap'].apply(lambda x: np.array(x))
+    if "ada_umap" in df_data.columns:
+        df_data['ada_umap'] = df_data['ada_umap'].apply(lambda x: np.array(x))
     if "specter_umap" in df_data.columns:
         df_data['specter_umap'] = df_data['specter_umap'].apply(lambda x: np.array(x))
     if "specter_umap" in df_data.columns:
@@ -279,24 +309,21 @@ def embed(papers):
     return embeddings_by_paper_id
 
 
-def get_similarities_by_abstract(df, title_to_match, abstract_to_match, limit):
-
+def get_similarities_by_abstract(df, embedding, input_data, limit):
     try:
-        embedding_col = "specter_embedding"
-        payload = [{
-            "paper_id": "sample_id",
-            "title": title_to_match,
-            "abstract": abstract_to_match
-        }]
-        embeddings = embed(payload)
-        query_vector = np.array([embeddings['sample_id']]).astype('float32')
+        if embedding == EMBED.ADA:
+            query_vector = ada_embedding(input_data)
+            embedding_col = 'ada_embedding'
+        else:
+            query_vector = specter_embedding(input_data)
+            embedding_col = 'specter_embedding'
 
         # It can be for *some* specter_embeddings since the API may not have worked.
         if query_vector is not None and query_vector.shape[1] != 0:
             squared_distances, indices = query_index[embedding_col].search(query_vector, limit)  # lookup similar papers in the query_index
 
             null_free_df = df.copy()
-            null_free_df.dropna(subset=['specter_embedding'], inplace=True)
+            null_free_df.dropna(subset=[embedding_col], inplace=True)
             df_similar = null_free_df.iloc[indices.tolist()[0]].copy()
 
             similarities = np.reciprocal(squared_distances.tolist())  # similarity = reciprocal of distance
@@ -316,8 +343,24 @@ def get_similarities_by_abstract(df, title_to_match, abstract_to_match, limit):
             return df_similar.loc[:, ~df_similar.columns.isin(restricted_column_list)]
         else:
             return None
-    except Exception:
+    except Exception as e:
         return None
+
+
+def specter_embedding(input_data) -> np.array:
+    payload = [{
+        "paper_id": "sample_id",
+        "title": input_data['title'],
+        "abstract": input_data['abstract']
+    }]
+    embeddings = embed(payload)
+    return np.array([embeddings['sample_id']]).astype('float32')
+
+
+def ada_embedding(input_data) -> np.array:
+    embeddings = ada_embedding_func.embed_query(input_data['abstract'])
+    return np.array([embeddings]).astype('float32')
+
 
 
 @app.route('/getPapers', methods = ['GET'])
@@ -375,10 +418,10 @@ def get_similar_papers_by_keyword():
 def get_similar_papers_by_abstract():
     global df
     input_payload = request.json
-    title = input_payload["input_data"]["title"]
-    abstract = input_payload["input_data"]["abstract"]
     limit = int(input_payload["limit"])
-    results_df = get_similarities_by_abstract(df, title, abstract, limit)
+    results_df = get_similarities_by_abstract(
+        df, input_payload["embedding"], input_payload["input_data"], limit
+    )
     if results_df is None:
         return Response("[]")
     else:
@@ -406,6 +449,50 @@ def checkout_papers():
     generator = (cell for row in papers for cell in row)
     filename="papers-checked-out.txt"
     return Response(generator, mimetype="text/plain", headers={"Content-Disposition": "attachment;" + filename})
+
+
+@app.route('/chat', methods=['POST'])
+@cross_origin()
+def chat():
+    text = request.json.get('text', '')
+    if not text:
+        return Response(tuple('Please Input Your Text'))
+    if len(text) > 1e6:
+        return Response(tuple('Too Long Text'))
+    return Response(chat_streaming_output(text))
+
+
+@app.route('/summarize', methods=['POST'])
+@cross_origin()
+def summarize():
+    paper_ids = request.json.get('ids', [])
+    length = len(paper_ids)
+    if not paper_ids:
+        return Response(tuple('Saved paper list is empty'))
+    if length > 10:
+        return Response(tuple('The current capability does not support summarizing more than 10 papers at once.'))
+
+    global df
+    df_summarize = df.loc[:, df.columns.isin(["ID", "Title", "Authors", "Abstract", "Source", "Year", "Keywords"])]
+    selected_papers = json.loads(df_summarize[df_summarize["ID"].isin(paper_ids)].to_json(orient="records", default_handler=str))
+
+    def format_papers(paper):
+        return (f" --- "
+                f"Title: {paper.get('Title', '')}\n"
+                f"Authors: {paper.get('Authors', '')}\n"
+                f"Abstract: {paper.get('Abstract', '')}\n"
+                f"Source: {paper.get('Source', '')}\n"
+                f"Year: {paper.get('Year', '')}\n"
+                f"Keywords: {paper.get('Keywords', '')}\n"
+                f" --- ")
+
+    if length == 1:
+        return Response(summarize_output({'content': format_papers(selected_papers[0])}))
+    else:
+        return Response(literature_review_output({
+            'num': length,
+            'content': '\n'.join([format_papers(i) for i in selected_papers])
+        }))
 
 
 @app.route('/')
