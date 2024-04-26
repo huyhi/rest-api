@@ -11,8 +11,9 @@ of the sentence or paragraph that reference them - do not put them all at the en
 different results refer to different entities within the same name, write separate \
 answers for each entity.
 
-You should use bullet points in your answer for readability. Put citations where they apply
-rather than putting them all at the end.
+You should use markdown syntax in your answer for readability. \
+And you need to give enough newlines in the markdown of the result to make the result readable. \
+Put citations where they apply rather than putting them all at the end.
 
 If there is nothing in the context relevant to the question at hand, just response you are not sure. \
 Don't try to make up an answer.
@@ -31,6 +32,9 @@ You are a scholar expert in the field of data visualization. \
 Now, I'm giving you relevant information about a paper. \
 Could you please help me summarize the content of this paper?
 
+You should use markdown syntax in your answer for readability. \
+And you need to give enough newlines in the markdown of the result to make the result readable.
+
 The requirement is to provide a detailed summary and also to expand upon it as appropriate. \
 
 content: \n 
@@ -42,10 +46,11 @@ You are an expert scholar in the field of data visualization. \
 Now, I'm giving you information on {num} relevant papers. \
 Could you please help me write a comprehensive literature review about these papers?
 
+You should use markdown syntax in your answer for readability.\
+And you need to give enough newlines in the markdown of the result to make the result readable.
+
 The requirement is to compare these papers as much as possible, summarizing the similarities, differences, and connections between them.\
 
 content: \n 
 {content}
 """
-
-
