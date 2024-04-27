@@ -462,37 +462,51 @@ def chat():
     return Response(chat_streaming_output(text))
 
 
+def format_papers_in_prompt(papers):
+    return '\n'.join([(f" --- "
+            f"Title: {paper.get('Title', '')}\n"
+            f"Authors: {paper.get('Authors', '')}\n"
+            f"Abstract: {paper.get('Abstract', '')}\n"
+            f"Source: {paper.get('Source', '')}\n"
+            f"Year: {paper.get('Year', '')}\n"
+            f"Keywords: {paper.get('Keywords', '')}\n"
+            f" --- ") for paper in papers])
+
+
 @app.route('/summarize', methods=['POST'])
 @cross_origin()
 def summarize():
+    prompt = request.json.get('prompt', '')
     paper_ids = request.json.get('ids', [])
-    length = len(paper_ids)
     if not paper_ids:
         return Response(tuple('Saved paper list is empty'))
-    if length > 10:
-        return Response(tuple('The current capability does not support summarizing more than 10 papers at once.'))
 
     global df
     df_summarize = df.loc[:, df.columns.isin(["ID", "Title", "Authors", "Abstract", "Source", "Year", "Keywords"])]
     selected_papers = json.loads(df_summarize[df_summarize["ID"].isin(paper_ids)].to_json(orient="records", default_handler=str))
 
-    def format_papers(paper):
-        return (f" --- "
-                f"Title: {paper.get('Title', '')}\n"
-                f"Authors: {paper.get('Authors', '')}\n"
-                f"Abstract: {paper.get('Abstract', '')}\n"
-                f"Source: {paper.get('Source', '')}\n"
-                f"Year: {paper.get('Year', '')}\n"
-                f"Keywords: {paper.get('Keywords', '')}\n"
-                f" --- ")
+    return Response(summarize_output({
+        'prompt': prompt,
+        'content': format_papers_in_prompt(selected_papers)
+    }))
 
-    if length == 1:
-        return Response(summarize_output({'content': format_papers(selected_papers[0])}))
-    else:
-        return Response(literature_review_output({
-            'num': length,
-            'content': '\n'.join([format_papers(i) for i in selected_papers])
-        }))
+
+@app.route('/literatureReview', methods=['POST'])
+@cross_origin()
+def literatureReview():
+    paper_ids = request.json.get('ids', [])
+    prompt = request.json.get('prompt', '')
+    if not paper_ids:
+        return Response(tuple('Saved paper list is empty'))
+
+    global df
+    df_summarize = df.loc[:, df.columns.isin(["ID", "Title", "Authors", "Abstract", "Source", "Year", "Keywords"])]
+    selected_papers = json.loads(df_summarize[df_summarize["ID"].isin(paper_ids)].to_json(orient="records", default_handler=str))
+
+    return Response(literature_review_output({
+        'prompt': prompt,
+        'content': format_papers_in_prompt(selected_papers)
+    }))
 
 
 @app.route('/')
