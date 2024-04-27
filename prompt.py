@@ -28,28 +28,20 @@ bank, not part of the conversation with the user.
 
 
 SUMMARIZE_PROMPT = """
-You are a scholar expert in the field of data visualization. \
-Now, I'm giving you relevant information about a paper. \
-Could you please help me summarize the content of this paper?
+{prompt}
 
 You should use markdown syntax in your answer for readability. \
 And you need to give enough newlines in the markdown of the result to make the result readable.
-
-The requirement is to provide a detailed summary and also to expand upon it as appropriate. \
 
 content: \n 
 {content}
 """
 
 LITERATURE_REVIEW_PROMPT = """
-You are an expert scholar in the field of data visualization. \
-Now, I'm giving you information on {num} relevant papers. \
-Could you please help me write a comprehensive literature review about these papers?
+{prompt}
 
 You should use markdown syntax in your answer for readability.\
 And you need to give enough newlines in the markdown of the result to make the result readable.
-
-The requirement is to compare these papers as much as possible, summarizing the similarities, differences, and connections between them.\
 
 content: \n 
 {content}
