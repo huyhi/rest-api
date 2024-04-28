@@ -2,7 +2,7 @@
 
 - Download all files in this [google drive](https://drive.google.com/drive/folders/1OiiwSi8aYb0w6fh8rpTMZS7MupO3pE0S) folder. There are two files:
 
-    - One is `VitaLITy-2.0.0.json`, This is the paper dataset. 
+    - One is `VitaLITy-2.0.0.json`, This is the paper dataset. After downloading, copy this inside the `data` folder of this repository.
     - The other is `data.db.zip`, which contains information about the chromadb data set. I use this to retrieve data when performing enhancements. After downloading, please unzip it and place the `data.db` folder in the project root folder. The directory structure is as shown below.
 
 ![1.png](./images/1.png)
