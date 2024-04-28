@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-from threading import Thread
 from typing import Dict, List
 
 import faiss
@@ -86,7 +85,7 @@ def load_data():
         json_data = pd.read_json(config.raw_json_datafile, orient="records")
         df_data = pd.DataFrame(json_data)
         df_data.dropna(subset=['Title', "Authors"], inplace=True)
-    
+
     elif config.data_source == "mongodb": # Reading from MONGODB
 
         # add in <user> and <pwd>
@@ -115,10 +114,10 @@ def load_data():
 
         # Uncomment if both glove and specter are needed
         df_data = pd.DataFrame(list(docs.find(query)))
-        
+
         # Drop all indices
         docs.drop_indexes()
-        
+
         # 2D Indices
         if "glove_umap" in df_data.columns:
             docs.create_index([("glove_umap", "2d")])
@@ -147,7 +146,7 @@ def load_data():
         df_data['Authors'] = df_data['Authors'].apply(lambda x: np.array(x))
     if "specter_umap" in df_data.columns:
         df_data['Keywords'] = df_data['Keywords'].apply(lambda x: np.array(set(x)) if isinstance(x, list) else np.array(x))
-    
+
     print("loaded data with ", len(df_data), "records")
     df = df_data
 
@@ -367,8 +366,9 @@ def ada_embedding(input_data) -> np.array:
 @cross_origin()
 def get_papers():
     global df
-    response = df.loc[:, ~df.columns.isin(restricted_column_list)].to_json(orient="records", default_handler=str)
-    return Response(response)
+    df_of_interest = df.loc[:, ~df.columns.isin(restricted_column_list)]
+    response = df_of_interest.to_json(orient="records", default_handler=str)
+    return Response(response, status=200, content_type='application/json')
 
 
 @app.route('/getSimilarPapers', methods=['POST'])
@@ -392,10 +392,10 @@ def get_similar_papers():
     # send limit*2 as the desired limit so that if there are input papers in the output papers, then we have to discard them; and the extra limit will help ensure the final limit stays right
     results_df = get_similarities(df, paper_ids, embedding, dimensions, limit * 2)
     if results_df is None:
-        return Response("[]")
+        return Response("[]", status=200, content_type='application/json')
     else:
         # apply the original limit to the final df
-        return Response(results_df.head(limit).to_json(orient="records", default_handler=str))
+        return Response(results_df.head(limit).to_json(orient="records", default_handler=str), status=200, content_type='application/json')
 
 
 @app.route('/getSimilarPapersByKeyword', methods=['POST'])
@@ -407,9 +407,9 @@ def get_similar_papers_by_keyword():
     limit = int(input_payload["limit"])
     results_df = get_similarities_by_keyword(df, keywords, limit)
     if results_df is None:
-        return Response("[]")
+        return Response("[]", status=200, content_type='application/json')
     else:
-        return Response(results_df.to_json(orient="records", default_handler=str))
+        return Response(results_df.to_json(orient="records", default_handler=str), status=200, content_type='application/json')
 
 
 
@@ -423,10 +423,10 @@ def get_similar_papers_by_abstract():
         df, input_payload["embedding"], input_payload["input_data"], limit
     )
     if results_df is None:
-        return Response("[]")
+        return Response("[]", status=200, content_type='application/json')
     else:
         # apply the original limit to the final df
-        return Response(results_df.to_json(orient="records", default_handler=str))
+        return Response(results_df.to_json(orient="records", default_handler=str), status=200, content_type='application/json')
 
 
 @app.route('/checkoutPapers', methods=['POST'])
@@ -459,7 +459,7 @@ def chat():
         return Response(tuple('Please Input Your Text'))
     if len(text) > 1e6:
         return Response(tuple('Too Long Text'))
-    return Response(chat_streaming_output(text))
+    return Response(chat_streaming_output(text), status=200, content_type='text/plain')
 
 
 def format_papers_in_prompt(papers):
@@ -479,7 +479,7 @@ def summarize():
     prompt = request.json.get('prompt', '')
     paper_ids = request.json.get('ids', [])
     if not paper_ids:
-        return Response(tuple('Saved paper list is empty'))
+        return Response(tuple('Saved paper list is empty'), status=200, content_type='application/json')
 
     global df
     df_summarize = df.loc[:, df.columns.isin(["ID", "Title", "Authors", "Abstract", "Source", "Year", "Keywords"])]
@@ -488,7 +488,7 @@ def summarize():
     return Response(summarize_output({
         'prompt': prompt,
         'content': format_papers_in_prompt(selected_papers)
-    }))
+    }), status=200, content_type='application/json')
 
 
 @app.route('/literatureReview', methods=['POST'])
@@ -497,7 +497,7 @@ def literatureReview():
     paper_ids = request.json.get('ids', [])
     prompt = request.json.get('prompt', '')
     if not paper_ids:
-        return Response(tuple('Saved paper list is empty'))
+        return Response(tuple('Saved paper list is empty'), status=200, content_type='application/json')
 
     global df
     df_summarize = df.loc[:, df.columns.isin(["ID", "Title", "Authors", "Abstract", "Source", "Year", "Keywords"])]
@@ -506,7 +506,7 @@ def literatureReview():
     return Response(literature_review_output({
         'prompt': prompt,
         'content': format_papers_in_prompt(selected_papers)
-    }))
+    }), status=200, content_type='application/json')
 
 
 @app.route('/')
@@ -525,6 +525,7 @@ if __name__ == "__main__":
 
     # This thread was added so that Heroku can run Flask and bind the $PORT ASAP. If it is unable to do that within 30 seconds, it will timeout.
     # Our process takes much longer than that so we start a new thread for it.
-    Thread(target=load_data_and_create_index).start()
+    # Thread(target=load_data_and_create_index).start()
+    load_data_and_create_index()
 
     app.run(host='0.0.0.0', port=port)  # Run it, baby!
