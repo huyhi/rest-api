@@ -455,11 +455,12 @@ def checkout_papers():
 @cross_origin()
 def chat():
     text = request.json.get('text', '')
+    chat_history = request.json.get('chatHistory', [])
     if not text:
         return Response(tuple('Please Input Your Text'))
     if len(text) > 1e6:
         return Response(tuple('Too Long Text'))
-    return Response(chat_streaming_output(text), status=200, content_type='text/plain')
+    return Response(chat_streaming_output(text, chat_history), status=200, content_type='text/plain')
 
 
 def format_papers_in_prompt(papers):
