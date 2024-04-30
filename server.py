@@ -445,10 +445,30 @@ def checkout_papers():
 
     # df_checkout = df.loc[:, ~df.columns.isin(["_id", "glove_embedding", "specter_embedding", "glove_umap", "specter_umap", "AbstractLength", "glove_kmeans_cluster", "specter_kmeans"])]
     df_checkout = df.loc[:, df.columns.isin(["ID","Title","Authors","Source","Year"])]
-    papers = df_checkout[df_checkout["ID"].isin(paper_ids)].to_json(orient="records", default_handler=str)
-    generator = (cell for row in papers for cell in row)
-    filename="papers-checked-out.txt"
-    return Response(generator, mimetype="text/plain", headers={"Content-Disposition": "attachment;" + filename})
+    papers = json.loads(df_checkout[df_checkout["ID"].isin(paper_ids)].to_json(orient="records", default_handler=str))
+    filename="papers-checked-out.bibtex"
+
+    response_text = '\n'.join([bib_template(paper) for paper in papers])
+    return Response(response_text, mimetype="text/plain", headers={"Content-Disposition": "attachment;" + filename})
+
+
+def bib_template(paper):
+    title = paper.get('Title', '')
+    year = paper.get('Year', '')
+    authors = []
+    for author in paper.get('Authors', []):
+        name = author.split(' ')
+        authors.append(f'{name[1]}, {name[0]}')
+    bib_id = f"{authors[0].split(',')[0]}{year}{title.split(' ')[0]}"
+
+    return f'''
+@article{{{bib_id},
+  title={{{title}}},
+  author={{{' and '.join(authors)}}},
+  year={{{year}}}
+}}
+'''
+
 
 
 @app.route('/chat', methods=['POST'])
