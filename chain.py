@@ -139,7 +139,7 @@ basedir = path.abspath(path.dirname(__file__))
 load_dotenv(path.join(basedir, '.env'))
 
 llm = ChatOpenAI(
-    model="gpt-3.5-turbo-0125",
+    model="gpt-4o",
     temperature=0,
     streaming=True,
 )
