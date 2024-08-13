@@ -3,6 +3,7 @@ import os
 import sys
 from typing import Dict, List
 
+import faiss
 import numpy as np
 import pandas as pd
 import pymongo
@@ -14,7 +15,7 @@ from langchain_openai import OpenAIEmbeddings
 from sklearn.preprocessing import MinMaxScaler
 
 import config
-from chain import chat_streaming_output, summarize_output, literature_review_output, format_papers_in_prompt
+from chain import chat_streaming_output, summarize_output, literature_review_output
 from extension.ext import cached_data
 from model.const import EMBED
 from model.mongo import MongoQuerySchema
@@ -36,6 +37,43 @@ query_index = {
     "specter_embedding": None,
     "ada_embedding": None
 }
+
+
+def create_query_index():
+    global df, query_index
+
+    # Glove
+    if "glove_embedding" in df.columns:
+        null_free_df = df[df['glove_embedding'].str.len() > 0].copy()
+        null_free_df.dropna(subset=['glove_embedding'], inplace=True)
+        xb = (np.array(null_free_df["glove_embedding"].tolist())).astype('float32')
+        d = xb.shape[1]
+        index = faiss.IndexFlatL2(d)
+        index.add(xb)
+        print("created query index for glove")
+        query_index['glove_embedding'] = index
+
+    # Specter
+    if "specter_embedding" in df.columns:
+        null_free_df = df[df['specter_embedding'].str.len() > 0].copy()
+        null_free_df.dropna(subset=['specter_embedding'], inplace=True)
+        xb = (np.array(null_free_df["specter_embedding"].tolist())).astype('float32')
+        d = xb.shape[1]
+        index = faiss.IndexFlatL2(d)
+        index.add(xb)
+        print("created query index for specter")
+        query_index['specter_embedding'] = index
+
+    # Ada
+    if "ada_embedding" in df.columns:
+        null_free_df = df[df['ada_embedding'].str.len() > 0].copy()
+        null_free_df.dropna(subset=['ada_embedding'], inplace=True)
+        xb = (np.array(null_free_df["ada_embedding"].tolist())).astype('float32')
+        d = xb.shape[1]
+        index = faiss.IndexFlatL2(d)
+        index.add(xb)
+        print("created query index for ada")
+        query_index['ada_embedding'] = index
 
 
 def load_data():
@@ -435,12 +473,6 @@ def bib_template(paper):
 '''
 
 
-@app.route('/metas', methods=['GET'])
-@cross_origin()
-def get_metas():
-    pass
-
-
 
 @app.route('/chat', methods=['POST'])
 @cross_origin()
@@ -454,10 +486,21 @@ def chat():
     return Response(chat_streaming_output(text, chat_history), status=200, content_type='text/plain')
 
 
+def format_papers_in_prompt(papers):
+    return '\n'.join([(f" --- "
+            f"Title: {paper.get('Title', '')}\n"
+            f"Authors: {paper.get('Authors', '')}\n"
+            f"Abstract: {paper.get('Abstract', '')}\n"
+            f"Source: {paper.get('Source', '')}\n"
+            f"Year: {paper.get('Year', '')}\n"
+            f"Keywords: {paper.get('Keywords', '')}\n"
+            f" --- ") for paper in papers])
+
+
 @app.route('/getUmapPoints', methods=['GET'])
 @cross_origin()
 def get_umap_points():
-    return jsonify(query_all_umap_points())
+    return jsonify(cached_data.get_umap_points())
 
 
 @app.route('/summarize', methods=['POST'])
@@ -503,9 +546,8 @@ def index():
 
 
 def load_data_and_create_index():
-    cached_data.init()
-    # load_data_from_mongo()
-    # load_data()
+    load_data()
+    create_query_index()
 
 
 if __name__ == "__main__":
