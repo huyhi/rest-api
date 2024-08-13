@@ -18,7 +18,7 @@ def chroma_collection(collection_name: str):
     return vector_db_client.get_or_create_collection(collection_name)
 
 
-def load_to_vector_db(embed_name):
+def load_json_to_chroma(embed_name):
     chroma = chroma_collection(embed_collection_map[embed_name])
 
     json_file_path = os.path.join(config.PROJ_ROOT_DIR, config.raw_json_datafile)
@@ -33,15 +33,8 @@ def load_to_vector_db(embed_name):
         if not data_slice:
             break
 
-        embeddings = [i[embed_name] for i in data_slice]
-
         chroma.add(
             embeddings=[i[embed_name] for i in data_slice],
             ids=[i['ID'] for i in data_slice],
         )
         start_idx = start_idx + step
-
-
-if __name__ == '__main__':
-    for embed_name in embed_collection_map:
-        load_to_vector_db(embed_name)
