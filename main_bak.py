@@ -15,11 +15,11 @@ from langchain_openai import OpenAIEmbeddings
 from sklearn.preprocessing import MinMaxScaler
 
 import config
-from chain import chat_streaming_output, summarize_output, literature_review_output
+from service.chain import chat_streaming_output, summarize_output, literature_review_output
 from extension.ext import cached_data
 from model.const import EMBED
 from model.mongo import MongoQuerySchema
-from service.mongo import query_all_umap_points, query_docs
+from service.mongo import query_docs
 
 client = None
 docs = None

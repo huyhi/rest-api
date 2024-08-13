@@ -20,8 +20,8 @@ import config
 from prompt import RESPONSE_TEMPLATE, LITERATURE_REVIEW_PROMPT, \
     SUMMARIZE_PROMPT, REPHRASE_TEMPLATE, COHERE_RESPONSE_TEMPLATE
 
-basedir = path.abspath(path.dirname(__file__))
-load_dotenv(path.join(basedir, '.env'))
+
+load_dotenv(path.join(config.PROJ_ROOT_DIR, '.env'))
 
 
 def format_papers_in_prompt(papers):
@@ -74,8 +74,8 @@ def get_retriever() -> BaseRetriever:
         f'{config.mongodb_database}.{config.mongodb_collection}',
         OpenAIEmbeddings(disallowed_special=()),
         text_key=config.mongodb_langchain_text_key,
-        embedding_key=config.mongodb_langchain_embedding_key,
-        index_name=config.mongodb_langchain_index
+        embedding_key='ada_embedding',
+        index_name='ada_embedding_index'
     )
     return vector_search.as_retriever(
         search_type="similarity",

@@ -2,9 +2,8 @@ venv/
 .DS_Store
 .pyc
 .idea
-data
+data/
+!data/meta_data.json
 data.db
-data/final_data.json
-data/final_data_slice.json
 
 __pycache__/
