@@ -20,7 +20,8 @@ raw_json_datafile = 'data/VitaLITy-2.0.0.json'
 mongodb_connection_uri = ''
 
 mongodb_database = 'vissimilarity'
-mongodb_collection = 'docs'
+mongodb_docs_collection = 'docs'
+mongodb_docs_embedding_collection = 'docsEmbedding'
 mongodb_langchain_text_key = 'Abstract'
 
 DB_FOLDER_NAME = 'data.db'

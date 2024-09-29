@@ -11,7 +11,7 @@ import config
 def load_json_to_mongo():
     client = MongoClient(config.mongodb_connection_uri)
     db = client[config.mongodb_database]
-    collection = db[config.mongodb_collection]
+    collection = db[config.mongodb_docs_collection]
 
     json_file_path = os.path.join(config.PROJ_ROOT_DIR, config.raw_json_datafile)
 

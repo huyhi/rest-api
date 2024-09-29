@@ -71,7 +71,7 @@ def get_retriever() -> BaseRetriever:
 
     vector_search = MongoDBAtlasVectorSearch.from_connection_string(
         config.mongodb_connection_uri,
-        f'{config.mongodb_database}.{config.mongodb_collection}',
+        f'{config.mongodb_database}.{config.mongodb_docs_embedding_collection}',
         OpenAIEmbeddings(disallowed_special=()),
         text_key=config.mongodb_langchain_text_key,
         embedding_key='ada_embedding',

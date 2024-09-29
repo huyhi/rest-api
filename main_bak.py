@@ -92,7 +92,7 @@ def load_data():
         # Choose the database
         db = client[config.mongodb_database]
         # Get the document collection
-        docs = db[config.mongodb_collection]
+        docs = db[config.mongodb_docs_collection]
         # print('There are ' + str(docs.count_documents({})) + " papers to load. Loading them now...")
 
         # db query to restrict sources
