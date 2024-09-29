@@ -2,8 +2,7 @@ venv/
 .DS_Store
 .pyc
 .idea
-data/
-!data/meta_data.json
+data/VitaLITy-2.0.0.json
 data.db
 
 __pycache__/

@@ -10,7 +10,8 @@ from service import embed
 
 client = MongoClient(config.mongodb_connection_uri)
 db = client[config.mongodb_database]
-collection = db[config.mongodb_collection]
+docs_collection = db[config.mongodb_docs_collection]
+docs_embedding_collection = db[config.mongodb_docs_embedding_collection]
 
 
 def query_docs(query: MongoQuerySchema):
@@ -50,7 +51,7 @@ def query_docs(query: MongoQuerySchema):
             year_query = {'$lte': query.max_year}
         db_query['Year'] = year_query
 
-    results = collection.find(db_query, fields).skip(query.offset).limit(query.limit)
+    results = docs_collection.find(db_query, fields).skip(query.offset).limit(query.limit)
     return list(results)
 
 
@@ -64,7 +65,7 @@ def query_doc_by_ids(ids: list):
 def query_doc_full_fields_by_ids(ids: list):
     if not ids:
         return []
-    results = collection.find({'ID': {'$in': ids}}).skip(0).limit(len(ids))
+    results = docs_collection.find({'ID': {'$in': ids}}).skip(0).limit(len(ids))
     return list(results)
 
 
@@ -110,7 +111,7 @@ def query_similar_doc_by_embedding_2d(paper: dict, embedding_type: str, limit: i
         return []
 
     return list(
-        collection.aggregate([
+        docs_collection.aggregate([
             {
                 '$geoNear': {
                     'key': embed_field,
@@ -145,7 +146,7 @@ def query_similar_doc_by_embedding_2d(paper: dict, embedding_type: str, limit: i
 
 
     # return list(
-    #     collection.find(
+    #     docs_collection.find(
     #         {
     #             embed_field: {'$near': coord},
     #             'ID': {'$nin': paper_ids}
@@ -177,7 +178,7 @@ def query_doc_by_embedding(paper_ids: List[str], embedding: List[float], embeddi
     else:
         raise RuntimeError('embedding_type not supported')
 
-    return list(collection.aggregate([
+    return list(docs_embedding_collection.aggregate([
         {
             "$vectorSearch": {
                 "index": index,
@@ -212,7 +213,7 @@ def query_doc_by_embedding(paper_ids: List[str], embedding: List[float], embeddi
 
 
 def query_all_umap_points():
-    results = collection.find(
+    results = docs_collection.find(
         {},
         {
             '_id': 0,
@@ -227,20 +228,20 @@ def query_all_umap_points():
 
 
 def query_meta_data():
-    authors = collection.aggregate([
+    authors = docs_collection.aggregate([
         {'$unwind': "$Authors"},
         {'$group': {'_id': "$Authors"}},
         {'$group': {'_id': None, 'distinctValues': {'$addToSet': "$_id"}}},
         {'$project': {'_id': 0, 'distinctValues': 1}}
     ])
-    keywords = collection.aggregate([
+    keywords = docs_collection.aggregate([
         {'$unwind': "$Keywords"},
         {'$group': {'_id': "$Keywords"}},
         {'$group': {'_id': None, 'distinctValues': {'$addToSet': "$_id"}}},
         {'$project': {'_id': 0, 'distinctValues': 1}}
     ])
-    years = collection.distinct('Year')
-    sources = collection.distinct('Source')
+    years = docs_collection.distinct('Year')
+    sources = docs_collection.distinct('Source')
 
     return {
         'authors': list(authors)[0].get('distinctValues', []),
@@ -264,7 +265,7 @@ def save_meta_data_local():
 
     while True:
         papers = list(
-            collection.find(
+            docs_collection.find(
                 {},
                 {
                     '_id': 0,
