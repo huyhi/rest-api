@@ -131,7 +131,19 @@ def get_umap_points():
 @app.route('/getMetaData', methods=['GET'])
 @cross_origin()
 def get_metas():
-    return jsonify(cached_data.get_meta_datas())
+    authors = mongo.get_distinct_authors()
+    sources = mongo.get_distinct_sources()
+    keywords = mongo.get_distinct_keywords()
+    years = mongo.get_distinct_years()
+    titles = mongo.get_distinct_titles()  # Retrieve titles
+    return jsonify({
+        'authors': authors,
+        'sources': sources,
+        'keywords': keywords,
+        'years': years,
+        'titles': titles
+    })
+    # return jsonify(cached_data.get_meta_datas())
 
 
 @app.route('/summarize', methods=['POST'])
@@ -164,6 +176,7 @@ def literature_review():
         'prompt': prompt,
         'content': format_papers_in_prompt(selected_papers)
     }), status=200, content_type='application/json')
+
 
 
 @app.route('/')

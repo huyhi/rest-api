@@ -97,7 +97,8 @@ def query_similar_doc_by_embedding_full(paper: dict, embedding_type: str, limit:
         raise RuntimeError('embedding_type not supported')
 
     paper_ids = [i['ID'] for i in paper]
-    embedding = embed.mean_embedding([i[index_path] for i in paper])
+    embedding = embed.mean_embedding([i[index_path] for i in paper if index_path in i and i[index_path] is not None])
+
     if not embedding_type:
         return []
     return query_doc_by_embedding(paper_ids, embedding, embedding_type, limit)
@@ -299,3 +300,22 @@ def save_meta_data_local():
 
     with open(config.meta_data_file_path, 'w') as f:
         json.dump(meta_data, f)
+
+def get_distinct_authors():
+    # Query to get all distinct authors
+    return list(db.papers.distinct("Authors"))
+
+def get_distinct_sources():
+    # Query to get all distinct sources
+    return list(db.papers.distinct("Source"))
+
+def get_distinct_keywords():
+    # Query to get all distinct keywords
+    return list(db.papers.distinct("Keywords"))
+
+def get_distinct_years():
+    # Query to get all distinct years
+    return list(db.papers.distinct("Year"))
+def get_distinct_titles():
+    collection = db['papers']  # Replace 'papers' with the correct collection name
+    return collection.distinct('Title')

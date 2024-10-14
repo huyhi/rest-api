@@ -2,8 +2,7 @@ import os
 
 PROJ_ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 
-OPENAI_API_KEY = ''
-
+OPENAI_API_KEY= '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'
 meta_data_file_path = os.path.join(PROJ_ROOT_DIR, 'data/meta_data.json')
 umap_data_file_path = os.path.join(PROJ_ROOT_DIR, 'data/umap_data.json')
 
@@ -17,7 +16,7 @@ raw_json_datafile = 'data/VitaLITy-2.0.0.json'
 
 # if `data_source` = 'mongodb'
 # mongodb_connection_uri = 'mongodb://localhost:27017'
-mongodb_connection_uri = ''
+mongodb_connection_uri = 'mongodb+srv://vitality2:GKqyXRAAK2wtbsqI@cluster0.detwbhh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
 
 mongodb_database = 'vissimilarity'
 mongodb_docs_collection = 'docs'
