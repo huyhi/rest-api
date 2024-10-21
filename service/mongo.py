@@ -303,19 +303,19 @@ def save_meta_data_local():
 
 def get_distinct_authors():
     # Query to get all distinct authors
-    return list(db.papers.distinct("Authors"))
+    return list(docs_collection.distinct("Authors"))
 
 def get_distinct_sources():
     # Query to get all distinct sources
-    return list(db.papers.distinct("Source"))
+    return list(docs_collection.distinct("Source"))
 
 def get_distinct_keywords():
     # Query to get all distinct keywords
-    return list(db.papers.distinct("Keywords"))
+    return list(docs_collection.distinct("Source"))
 
 def get_distinct_years():
     # Query to get all distinct years
-    return list(db.papers.distinct("Year"))
+    return list(docs_collection.distinct("Source"))
 def get_distinct_titles():
     collection = db['papers']  # Replace 'papers' with the correct collection name
-    return collection.distinct('Title')
+    return list(docs_collection.distinct("Source"))

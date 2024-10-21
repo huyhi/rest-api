@@ -131,19 +131,17 @@ def get_umap_points():
 @app.route('/getMetaData', methods=['GET'])
 @cross_origin()
 def get_metas():
-    authors = mongo.get_distinct_authors()
-    sources = mongo.get_distinct_sources()
-    keywords = mongo.get_distinct_keywords()
-    years = mongo.get_distinct_years()
-    titles = mongo.get_distinct_titles()  # Retrieve titles
+    authors = mongo.get_distinct_authors()  # Retrieve distinct authors from the database
+    sources = mongo.get_distinct_sources()  # Retrieve distinct sources from the database
+    keywords = mongo.get_distinct_keywords()  # Retrieve distinct keywords from the database
+    # years = mongo.get_distinct_years()  # Retrieve distinct years from the database
+    # titles = mongo.get_distinct_titles()  # Retrieve distinct titles from the database
+
     return jsonify({
         'authors': authors,
         'sources': sources,
         'keywords': keywords,
-        'years': years,
-        'titles': titles
     })
-    # return jsonify(cached_data.get_meta_datas())
 
 
 @app.route('/summarize', methods=['POST'])
