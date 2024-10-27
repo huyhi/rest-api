@@ -38,7 +38,7 @@ def query_docs(query: MongoQuerySchema):
     if query.keyword:
         db_query['Keywords'] = {'$in': query.keyword}
     if query.source:
-        db_query['Source'] = query.source
+        db_query['Source'] = {'$in': query.source}
     if query.title:
         db_query['Title'] = {'$regex': query.title, '$options': 'i'}
     if query.abstract:

@@ -53,7 +53,7 @@ def get_papers():
         max_year=input_payload.get('max_year'),
         id_list=input_payload.get('id_list'),
         offset=input_payload.get('offset', 0),
-        limit=input_payload.get('limit', 1000)
+        limit=input_payload.get('limit', 3000)
     )
     return jsonify(query_docs(query))
 
