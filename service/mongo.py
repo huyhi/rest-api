@@ -311,11 +311,14 @@ def get_distinct_sources():
 
 def get_distinct_keywords():
     # Query to get all distinct keywords
-    return list(docs_collection.distinct("Source"))
+    return list(docs_collection.distinct("Keywords"))
 
 def get_distinct_years():
     # Query to get all distinct years
-    return list(docs_collection.distinct("Source"))
+    return list(docs_collection.distinct("Year"))
 def get_distinct_titles():
     collection = db['papers']  # Replace 'papers' with the correct collection name
-    return list(docs_collection.distinct("Source"))
+    return list(docs_collection.distinct("Title"))
+# def get_distinct_citation_counts():
+#     collection = db['papers']  # Replace 'papers' with the correct collection name
+#     return list(docs_collection.distinct("Title"))

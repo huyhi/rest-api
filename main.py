@@ -53,7 +53,7 @@ def get_papers():
         max_year=input_payload.get('max_year'),
         id_list=input_payload.get('id_list'),
         offset=input_payload.get('offset', 0),
-        limit=input_payload.get('limit', 3000)
+        limit=input_payload.get('limit', 1000)
     )
     return jsonify(query_docs(query))
 
@@ -134,13 +134,15 @@ def get_metas():
     authors = mongo.get_distinct_authors()  # Retrieve distinct authors from the database
     sources = mongo.get_distinct_sources()  # Retrieve distinct sources from the database
     keywords = mongo.get_distinct_keywords()  # Retrieve distinct keywords from the database
-    # years = mongo.get_distinct_years()  # Retrieve distinct years from the database
-    # titles = mongo.get_distinct_titles()  # Retrieve distinct titles from the database
+    years = mongo.get_distinct_years()  # Retrieve distinct years from the database
+    titles = mongo.get_distinct_titles()  # Retrieve distinct titles from the database
 
     return jsonify({
         'authors': authors,
         'sources': sources,
         'keywords': keywords,
+        'years':years,
+        'titles':titles,
     })
 
 
