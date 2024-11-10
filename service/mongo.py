@@ -51,7 +51,11 @@ def query_docs(query: MongoQuerySchema):
             year_query = {'$lte': query.max_year}
         db_query['Year'] = year_query
 
-    results = docs_collection.find(db_query, fields).skip(query.offset).limit(query.limit)
+    if query.limit == -1:
+        results = docs_collection.find(db_query, fields).skip(query.offset)  # No limit applied
+    else:
+        results = docs_collection.find(db_query, fields).skip(query.offset).limit(query.limit)
+
     return list(results)
 
 
