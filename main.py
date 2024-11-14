@@ -51,6 +51,8 @@ def get_papers():
         keyword=input_payload.get('keyword'),
         min_year=input_payload.get('min_year'),
         max_year=input_payload.get('max_year'),
+        min_citation_counts=input_payload.get('min_citation_counts'),
+        max_citation_counts=input_payload.get('max_citation_counts'),
         id_list=input_payload.get('id_list'),
         offset=input_payload.get('offset', 0),
         limit=input_payload.get('limit', 1000)
@@ -136,6 +138,7 @@ def get_metas():
     keywords = mongo.get_distinct_keywords()  # Retrieve distinct keywords from the database
     years = mongo.get_distinct_years()  # Retrieve distinct years from the database
     titles = mongo.get_distinct_titles()  # Retrieve distinct titles from the database
+    citation_counts = mongo.get_distinct_citation_counts()
 
     return jsonify({
         'authors': authors,
@@ -143,6 +146,7 @@ def get_metas():
         'keywords': keywords,
         'years':years,
         'titles':titles,
+        'citation_counts': citation_counts
     })
 
 

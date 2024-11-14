@@ -14,3 +14,5 @@ class MongoQuerySchema(BaseModel):
     id_list: Optional[list] = None
     limit: int = 20
     offset: int = 0
+    min_citation_counts: Optional[int] = None
+    max_citation_counts: Optional[int] = None

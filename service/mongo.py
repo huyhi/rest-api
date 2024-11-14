@@ -27,6 +27,7 @@ def query_docs(query: MongoQuerySchema):
         'ada_umap': 1,
         'glove_umap': 1,
         'specter_umap': 1,
+        'CitationCounts': 1
     }
 
     db_query = dict()
@@ -50,13 +51,25 @@ def query_docs(query: MongoQuerySchema):
         if query.max_year:
             year_query = {'$lte': query.max_year}
         db_query['Year'] = year_query
+    if query.min_citation_counts is not None or query.max_citation_counts is not None:
+        citation_query = dict()
+        if query.min_citation_counts is not None:
+            citation_query['$gte'] = query.min_citation_counts
+        if query.max_citation_counts is not None:
+            citation_query['$lte'] = query.max_citation_counts
+        db_query['CitationCounts'] = citation_query
 
     if query.limit == -1:
         results = docs_collection.find(db_query, fields).skip(query.offset)  # No limit applied
     else:
         results = docs_collection.find(db_query, fields).skip(query.offset).limit(query.limit)
-
-    return list(results)
+    results=list(results)
+    final_results = []
+    for doc in results:
+        if 'CitationCounts' not in doc:
+            doc['CitationCounts'] = -1
+        final_results.append(doc)
+    return final_results
 
 
 def query_doc_by_ids(ids: list):
@@ -323,6 +336,6 @@ def get_distinct_years():
 def get_distinct_titles():
     collection = db['papers']  # Replace 'papers' with the correct collection name
     return list(docs_collection.distinct("Title"))
-# def get_distinct_citation_counts():
-#     collection = db['papers']  # Replace 'papers' with the correct collection name
-#     return list(docs_collection.distinct("Title"))
+def get_distinct_citation_counts():
+    collection = db['papers']  # Replace 'papers' with the correct collection name
+    return list(docs_collection.distinct("CitationCounts"))
