@@ -5,5 +5,4 @@ venv/
 data/VitaLITy-2.0.0.json
 data.db
 .env
-config.py
 __pycache__/
