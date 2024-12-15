@@ -240,6 +240,8 @@ def query_all_umap_points():
             'ada_umap': 1,
             'glove_umap': 1,
             'specter_umap': 1,
+            'Year': 1,
+            'Source': 1,
         }
     )
     return list(results)
@@ -339,3 +341,52 @@ def get_distinct_titles():
 def get_distinct_citation_counts():
     collection = db['papers']  # Replace 'papers' with the correct collection name
     return list(docs_collection.distinct("CitationCounts"))
+def get_distinct_authors_with_counts():
+    # Query to get distinct authors and their counts
+    pipeline = [
+        {"$unwind": "$Authors"},  # Unwind the Authors array if it exists
+        {"$group": {"_id": "$Authors", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}  # Optional: sort by count in descending order
+    ]
+    return list(docs_collection.aggregate(pipeline))
+
+def get_distinct_sources_with_counts():
+    # Query to get distinct sources and their counts
+    pipeline = [
+        {"$group": {"_id": "$Source", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    return list(docs_collection.aggregate(pipeline))
+
+def get_distinct_keywords_with_counts():
+    # Query to get distinct keywords and their counts
+    pipeline = [
+        {"$unwind": "$Keywords"},  # Unwind the Keywords array if it exists
+        {"$group": {"_id": "$Keywords", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    return list(docs_collection.aggregate(pipeline))
+
+def get_distinct_years_with_counts():
+    # Query to get distinct years and their counts
+    pipeline = [
+        {"$group": {"_id": "$Year", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}  # Optional: sort by year in ascending order
+    ]
+    return list(docs_collection.aggregate(pipeline))
+
+def get_distinct_titles_with_counts():
+    # Query to get distinct titles and their counts
+    pipeline = [
+        {"$group": {"_id": "$Title", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    return list(docs_collection.aggregate(pipeline))
+
+def get_distinct_citation_counts_with_counts():
+    # Query to get distinct citation counts and their counts
+    pipeline = [
+        {"$group": {"_id": "$CitationCounts", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    return list(docs_collection.aggregate(pipeline))

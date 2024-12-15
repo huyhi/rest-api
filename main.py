@@ -133,19 +133,22 @@ def get_umap_points():
 @app.route('/getMetaData', methods=['GET'])
 @cross_origin()
 def get_metas():
-    authors = mongo.get_distinct_authors()  # Retrieve distinct authors from the database
-    sources = mongo.get_distinct_sources()  # Retrieve distinct sources from the database
-    keywords = mongo.get_distinct_keywords()  # Retrieve distinct keywords from the database
-    years = mongo.get_distinct_years()  # Retrieve distinct years from the database
-    titles = mongo.get_distinct_titles()  # Retrieve distinct titles from the database
-    citation_counts = mongo.get_distinct_citation_counts()
+    # Return pairs of unique values and counts for specific fields
+    authors_summary = mongo.get_distinct_authors_with_counts()
+    sources_summary = mongo.get_distinct_sources_with_counts()
+    keywords_summary = mongo.get_distinct_keywords_with_counts()
+    years_summary = mongo.get_distinct_years_with_counts()
+
+    # Return only unique values for the remaining fields
+    titles = mongo.get_distinct_titles()  # Unique titles
+    citation_counts = mongo.get_distinct_citation_counts()  # Unique citation counts
 
     return jsonify({
-        'authors': authors,
-        'sources': sources,
-        'keywords': keywords,
-        'years':years,
-        'titles':titles,
+        'authors_summary': authors_summary,
+        'sources_summary': sources_summary,
+        'keywords_summary': keywords_summary,
+        'years_summary': years_summary,
+        'titles': titles,
         'citation_counts': citation_counts
     })
 
