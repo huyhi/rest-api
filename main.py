@@ -26,6 +26,7 @@ def get_similarities_v2(paper_ids, embedding, dimensions, limit):
         return []
 
     if dimensions == "nD":
+        a=mongo.query_similar_doc_by_embedding_full(papers, embedding, limit)
         return mongo.query_similar_doc_by_embedding_full(papers, embedding, limit)
     elif dimensions == '2D':
         return mongo.query_similar_doc_by_embedding_2d(papers, embedding, limit)

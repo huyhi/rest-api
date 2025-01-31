@@ -72,6 +72,74 @@ def query_docs(query: MongoQuerySchema):
     return final_results
 
 
+def query_docs_with_embeddings(query: MongoQuerySchema):
+    # 1) Add the embedding fields to 'fields'.
+    fields = {
+        '_id': 0,
+        'ID': 1,
+        'Authors': 1,
+        'Keywords': 1,
+        'Source': 1,
+        'Title': 1,
+        'Abstract': 1,
+        'Year': 1,
+        'ada_umap': 1,
+        'ada_embedding': 1,  # <-- now included
+        'glove_umap': 1,
+        'glove_embedding': 1,  # <-- now included
+        'specter_umap': 1,
+        'specter_embedding': 1,  # <-- now included
+        'CitationCounts': 1
+    }
+
+    db_query = {}
+
+    # 2) Build the same query conditions as before.
+    if query.id_list:
+        db_query['ID'] = {'$in': query.id_list}
+    if query.author:
+        db_query['Authors'] = {'$in': query.author}
+    if query.keyword:
+        db_query['Keywords'] = {'$in': query.keyword}
+    if query.source:
+        db_query['Source'] = {'$in': query.source}
+    if query.title:
+        db_query['Title'] = {'$regex': query.title, '$options': 'i'}
+    if query.abstract:
+        db_query['Abstract'] = {'$regex': query.abstract, '$options': 'i'}
+    if query.min_year or query.max_year:
+        year_query = {}
+        if query.min_year:
+            year_query['$gte'] = query.min_year
+        if query.max_year:
+            year_query['$lte'] = query.max_year
+        db_query['Year'] = year_query
+    if query.min_citation_counts is not None or query.max_citation_counts is not None:
+        citation_query = {}
+        if query.min_citation_counts is not None:
+            citation_query['$gte'] = query.min_citation_counts
+        if query.max_citation_counts is not None:
+            citation_query['$lte'] = query.max_citation_counts
+        db_query['CitationCounts'] = citation_query
+
+    # 3) Fetch results with the new fields projection.
+    if query.limit == -1:
+        results = docs_collection.find(db_query, fields).skip(query.offset)
+    else:
+        results = docs_collection.find(db_query, fields).skip(query.offset).limit(query.limit)
+
+    results = list(results)
+
+    # 4) Enforce any post-processing you like (e.g., default CitationCounts).
+    final_results = []
+    for doc in results:
+        if 'CitationCounts' not in doc:
+            doc['CitationCounts'] = -1
+        final_results.append(doc)
+
+    return final_results
+
+
 def query_doc_by_ids(ids: list):
     if ids:
         return query_docs(MongoQuerySchema(id_list=ids, offset=0, limit=len(ids)))
@@ -84,6 +152,8 @@ def query_doc_full_fields_by_ids(ids: list):
         return []
     results = docs_collection.find({'ID': {'$in': ids}}).skip(0).limit(len(ids))
     return list(results)
+    # return results
+
 
 
 def query_doc_by_id(_id: str):
@@ -101,7 +171,7 @@ def query_similar_doc_by_paper(papers: dict, embedding_type: str, limit: int = 2
         embeddings = embed.ada_embedding(papers)
     else:
         raise RuntimeError('embedding_type not supported')
-
+    a=query_doc_by_embedding([], embeddings, embedding_type, limit)
     return query_doc_by_embedding([], embeddings, embedding_type, limit)
 
 
@@ -109,7 +179,7 @@ def query_similar_doc_by_embedding_full(paper: dict, embedding_type: str, limit:
     if embedding_type in (EMBED.GLOVE, EMBED.SPECTER):
         index_path = 'specter_embedding'
     elif embedding_type == EMBED.ADA:
-        index_path = 'ada_embedding'
+        index_path = 'ada_embedding' #index_path should be ada_umap instead of ada_embedding
     else:
         raise RuntimeError('embedding_type not supported')
 
